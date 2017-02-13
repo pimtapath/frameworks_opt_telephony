@@ -47,6 +47,7 @@ import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.NetworkStats;
 import android.content.IntentFilter;
 import android.net.Uri;
@@ -74,6 +75,7 @@ import android.telephony.ims.ImsCallProfile;
 import android.telephony.ims.ImsReasonInfo;
 import android.telephony.ims.ImsStreamMediaProfile;
 import android.telephony.ims.ImsSsInfo;
+import android.telephony.ims.ImsStreamMediaProfile;
 import android.text.TextUtils;
 
 import com.android.ims.ImsCall;
@@ -102,6 +104,9 @@ import com.android.internal.telephony.gsm.GsmMmiCode;
 import com.android.internal.telephony.gsm.SuppServiceNotification;
 import com.android.internal.telephony.uicc.IccRecords;
 import com.android.internal.telephony.util.NotificationChannelController;
+
+import org.codeaurora.ims.QtiCallConstants;
+import org.codeaurora.ims.utils.QtiImsExtUtils;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -1943,19 +1948,19 @@ public class ImsPhone extends ImsPhoneBase {
      * @param data The Rtt text to be sent
      */
     public void sendRttMessage(String data) {
-        ImsCall imsCall = getForegroundCall().getImsCall();
-        if (imsCall == null) {
-            Rlog.d(LOG_TAG, "RTT: imsCall null");
-            return;
-        }
-
-        if (!imsCall.isRttCall() || !isFgCallActive()) {
+        if (!canProcessRttRequest() || !isFgCallActive()) {
             return;
         }
 
         // Check for empty message
         if (TextUtils.isEmpty(data)) {
             Rlog.d(LOG_TAG, "RTT: Text null");
+            return;
+        }
+
+        ImsCall imsCall = getForegroundCall().getImsCall();
+        if (imsCall == null) {
+            Rlog.d(LOG_TAG, "RTT: imsCall null");
             return;
         }
 
@@ -1981,11 +1986,7 @@ public class ImsPhone extends ImsPhoneBase {
             return;
         }
 
-        try {
-            imsCall.sendRttModifyRequest(to);
-        } catch (ImsException e) {
-            Rlog.e(LOG_TAG, "RTT: sendRttModifyRequest exception = " + e);
-        }
+        imsCall.sendRttModifyRequest();
     }
 
     /**
@@ -2011,7 +2012,7 @@ public class ImsPhone extends ImsPhoneBase {
 
     // Utility to check if the value coming in intent is for upgrade initiate or upgrade response
     private void checkIfModifyRequestOrResponse(int data) {
-        if (!(isRttSupported() && (isRttOn() || isInEmergencyCall())) || !isFgCallActive()) {
+        if (!canProcessRttRequest() || !isFgCallActive()) {
             return;
         }
 
@@ -2039,9 +2040,8 @@ public class ImsPhone extends ImsPhoneBase {
         }
 
         ImsCallProfile fromProfile = getForegroundCall().getImsCall().getCallProfile();
-        ImsCallProfile toProfile = new ImsCallProfile(fromProfile.mServiceType,
-                fromProfile.mCallType);
-        toProfile.mMediaProfile.setRttMode(data);
+        ImsCallProfile toProfile = fromProfile;
+        toProfile.mMediaProfile = new ImsStreamMediaProfile(data);
 
         Rlog.d(LOG_TAG, "RTT: packRttModifyRequestToProfile");
         sendRttModifyRequest(toProfile);
@@ -2092,23 +2092,17 @@ public class ImsPhone extends ImsPhoneBase {
         return true;
     }
 
-    public boolean isRttSupported() {
-        if (!QtiImsExtUtils.isRttSupported(mPhoneId, mContext)) {
-            Rlog.d(LOG_TAG, "RTT: RTT is not supported");
+    public boolean canProcessRttRequest() {
+        // Process only if Carrier supports RTT and RTT is on
+        if (!(QtiImsExtUtils.isRttSupported(mPhoneId, mContext) &&
+                    QtiImsExtUtils.isRttOn(mContext))) {
+            Rlog.d(LOG_TAG, "RTT: canProcessRttRequest RTT is not supported/off");
             return false;
         }
-        Rlog.d(LOG_TAG, "RTT: rtt supported = " +
-                QtiImsExtUtils.isRttSupported(mPhoneId, mContext) + ", Rtt mode = " +
+        Rlog.d(LOG_TAG, "RTT: canProcessRttRequest rtt supported = " +
+                QtiImsExtUtils.isRttSupported(mPhoneId, mContext) + ", is Rtt on = " +
+                QtiImsExtUtils.isRttOn(mContext) + ", Rtt mode = " +
                 QtiImsExtUtils.getRttOperatingMode(mContext));
-        return true;
-    }
-
-    public boolean isRttOn() {
-        if (!QtiImsExtUtils.isRttOn(mContext)) {
-            Rlog.d(LOG_TAG, "RTT: RTT is off");
-            return false;
-        }
-        Rlog.d(LOG_TAG, "RTT: Rtt on = " + QtiImsExtUtils.isRttOn(mContext));
         return true;
     }
 

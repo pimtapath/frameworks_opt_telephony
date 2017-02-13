@@ -102,6 +102,9 @@ import com.android.internal.telephony.nano.TelephonyProto.TelephonyCallSession;
 import com.android.internal.telephony.nano.TelephonyProto.TelephonyCallSession.Event.ImsCommand;
 import com.android.server.net.NetworkStatsService;
 
+import org.codeaurora.ims.QtiCallConstants;
+import org.codeaurora.ims.utils.QtiImsExtUtils;
+
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -1837,7 +1840,6 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
                 ImsCall imsCall = mRingingCall.getImsCall();
                 if (imsCall != null) {
                     ImsStreamMediaProfile mediaProfile = new ImsStreamMediaProfile();
-
                     mediaProfile = addRttAttributeIfRequired(imsCall, mediaProfile);
 
                     imsCall.accept(
@@ -4098,7 +4100,7 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
 
     // Update the Rtt attribute
     private ImsCallProfile setRttModeBasedOnOperator(ImsCallProfile profile) {
-        if (!(mPhone.isRttSupported() && mPhone.isRttOn())) {
+        if (!mPhone.canProcessRttRequest()) {
             return profile;
         }
 
@@ -4106,8 +4108,8 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
 
         if (DBG) log("RTT: setRttModeBasedOnOperator mode = " + mode);
 
-        if (!QtiImsExtUtils.isRttSupportedOnVtCalls(mPhone.getPhoneId(), mPhone.getContext())
-                && profile.isVideoCall()) {
+        if (!QtiImsExtUtils.isRttSupportedOnVtCalls(mPhone.getPhoneId(), mPhone.getContext()) &&
+                profile.isVideoCall()) {
             return profile;
         }
 
@@ -4119,15 +4121,14 @@ public class ImsPhoneCallTracker extends CallTracker implements ImsPullCall {
     private ImsStreamMediaProfile addRttAttributeIfRequired(ImsCall call,
             ImsStreamMediaProfile mediaProfile) {
 
-        if (!mPhone.isRttSupported()) {
+        if (!mPhone.canProcessRttRequest()) {
             return mediaProfile;
         }
 
         ImsCallProfile profile = call.getCallProfile();
         if (profile.mMediaProfile != null && profile.mMediaProfile.isRttCall() &&
                 (mPhone.isRttVtCallAllowed(call))) {
-            if (DBG) log("RTT: addRttAttributeIfRequired = " +
-                    profile.mMediaProfile.isRttCall());
+            if (DBG) log("RTT: addRttAttributeIfRequired = " + profile.mMediaProfile.isRttCall());
             // If RTT UI option is on, then incoming RTT call should always be accepted
             // as RTT, irrespective of Modes
             mediaProfile.setRttMode(ImsStreamMediaProfile.RTT_MODE_FULL);
