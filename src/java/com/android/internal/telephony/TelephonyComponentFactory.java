@@ -247,10 +247,10 @@ public class TelephonyComponentFactory {
         return SubscriptionController.init(c, ci);
     }
 
-    public SubscriptionInfoUpdater makeSubscriptionInfoUpdater(Looper looper, Context context,
+    public SubscriptionInfoUpdater makeSubscriptionInfoUpdater(Context context,
             Phone[] phones, CommandsInterface[] ci) {
         Rlog.d(LOG_TAG, "makeSubscriptionInfoUpdater");
-        return new SubscriptionInfoUpdater(looper, context, phones, ci);
+        return new SubscriptionInfoUpdater(BackgroundThread.get().getLooper(), context, phones, ci);
     }
 
     public void makeExtTelephonyClasses(Context context,
