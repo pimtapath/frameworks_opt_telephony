@@ -491,7 +491,7 @@ public class DcTracker extends Handler {
 
     // When false we will not auto attach and manually attaching is required.
     protected boolean mAutoAttachOnCreationConfig = false;
-    private AtomicBoolean mAutoAttachOnCreation = new AtomicBoolean(false);
+    protected AtomicBoolean mAutoAttachOnCreation = new AtomicBoolean(false);
 
     // State of screen
     // (TODO: Reconsider tying directly to screen, maybe this is
