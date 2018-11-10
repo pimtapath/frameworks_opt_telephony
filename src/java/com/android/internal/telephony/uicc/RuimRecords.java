@@ -84,8 +84,8 @@ public class RuimRecords extends IccRecords {
                 + " mHomeNetworkId=" + mHomeNetworkId;
     }
 
-    // Constants
-    // MNC length in case of CSIM/RUIM IMSI is 2 as per spec C.S0065 section 5.2.2
+    //Constants
+    //MNC length in case of CSIM/RUIM IMSI is 2 as per spec C.S0065 section 5.2.2
     private static final int CSIM_IMSI_MNC_LENGTH = 2;
 
     // ***** Event Constants
@@ -209,7 +209,7 @@ public class RuimRecords extends IccRecords {
     private int decodeImsiDigits(int digits, int length) {
         // Per C.S0005 section 2.3.1.
         int constant = 0;
-        for (int i = 0; i < length; i++) {
+        for (int i = 0; i < length; i++ ) {
             constant = (constant * 10) + 1;
         }
 
@@ -257,7 +257,7 @@ public class RuimRecords extends IccRecords {
     }
 
      /**
-     * Introduce Generic API returns the 5 or 6 digit MCC/MNC
+     * Introduce Genreic API returns the 5 or 6 digit MCC/MNC
      * of the operator that provided the RUIM card.
      * Returns null of RUIM is not yet ready
      */
@@ -283,7 +283,7 @@ public class RuimRecords extends IccRecords {
             return imsi.substring(0, 3 + mMncLength);
         }
 
-        return mImsi.substring(0, 3 + CSIM_IMSI_MNC_LENGTH);
+        return imsi.substring(0, 3 + CSIM_IMSI_MNC_LENGTH);
     }
 
     // Refer to ETSI TS 102.221
@@ -435,7 +435,7 @@ public class RuimRecords extends IccRecords {
                 mMin = null;
                 return;
             }
-            if (VDBG) log("CSIM_IMSIM=" + IccUtils.bytesToHexString(data));
+            if (DBG) log("CSIM_IMSIM=" + IccUtils.bytesToHexString(data));
 
             // C.S0065 section 5.2.2 for IMSI_M encoding
             // C.S0005 section 2.3.1 for MIN encoding in IMSI_M.
@@ -446,23 +446,23 @@ public class RuimRecords extends IccRecords {
                 if (null != mImsi) {
                     mMin = mImsi.substring(5, 15);
                 }
-                if (DBG) log("IMSI: " + mImsi.substring(0, 5) + "xxxxxxxxx");
+                log("IMSI: " + mImsi.substring(0, 5) + "xxxxxxxxx");
 
             } else {
                 if (DBG) log("IMSI not provisioned in card");
             }
 
-            // Update MccTable with the retrieved IMSI
+            //Update MccTable with the retrieved IMSI
             String operatorNumeric = getOperatorNumeric();
             if (operatorNumeric != null) {
-                if (operatorNumeric.length() <= 6) {
+                if(operatorNumeric.length() <= 6){
                     MccTable.updateMccMncConfiguration(mContext, operatorNumeric, false);
                 }
             }
 
             mImsiReadyRegistrants.notifyRegistrants();
         }
-    }
+   }
 
     private class EfCsimCdmaHomeLoaded implements IccRecordLoaded {
         @Override
@@ -902,6 +902,7 @@ public class RuimRecords extends IccRecords {
         mFh.loadEFTransparent(EF_CSIM_MIPUPP,
                 obtainMessage(EVENT_GET_ICC_RECORD_DONE, new EfCsimMipUppLoaded()));
         mRecordsToLoad++;
+        mFh.getEFLinearRecordSize(EF_SMS, obtainMessage(EVENT_GET_SMS_RECORD_SIZE_DONE));
 
         if (DBG) log("fetchRuimRecords " + mRecordsToLoad + " requested: " + mRecordsRequested);
         // Further records that can be inserted are Operator/OEM dependent
