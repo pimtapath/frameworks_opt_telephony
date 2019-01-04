@@ -285,12 +285,10 @@ public class DcTracker extends Handler {
     };
 
     private SubscriptionManager mSubscriptionManager;
-    private final DctOnSubscriptionsChangedListener
-            mOnSubscriptionsChangedListener = new DctOnSubscriptionsChangedListener();
-
-    private class DctOnSubscriptionsChangedListener extends OnSubscriptionsChangedListener {
-        public final AtomicInteger mPreviousSubId =
-                new AtomicInteger(SubscriptionManager.INVALID_SUBSCRIPTION_ID);
+    private final OnSubscriptionsChangedListener mOnSubscriptionsChangedListener =
+            new OnSubscriptionsChangedListener() {
+                public final AtomicInteger mPreviousSubId =
+                        new AtomicInteger(SubscriptionManager.INVALID_SUBSCRIPTION_ID);
 
         /**
          * Callback invoked when there is any change to any SubscriptionInfo. Typically
@@ -2411,9 +2409,6 @@ public class DcTracker extends Handler {
         mAutoAttachOnCreationConfig = false;
         // Clear auto attach as modem is expected to do a new attach once SIM is ready
         mAutoAttachOnCreation.set(false);
-        // Reset previous SUB ID as the same SIM might be inserted back in hot-swap case
-        mOnSubscriptionsChangedListener.mPreviousSubId.set(
-                SubscriptionManager.INVALID_SUBSCRIPTION_ID);
     }
 
     private void onSetDependencyMet(String apnType, boolean met) {
